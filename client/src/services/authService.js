@@ -63,7 +63,10 @@ class AuthService {
   async getLoginUsers() {
     try {
       const users = await api('/login-users');
-      return { users, isLive: true };
+      return { 
+        users: Array.isArray(users) ? users : DEV_MOCK_USERS, 
+        isLive: Array.isArray(users) 
+      };
     } catch {
       return { users: DEV_MOCK_USERS, isLive: false };
     }
