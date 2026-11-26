@@ -1,44 +1,125 @@
-import { useState, useEffect } from 'react';
-import { LayoutDashboard, CalendarCheck, Boxes, Users, Building2, ClipboardCheck, Wrench, BarChart3, Settings as Cog, Menu, Search } from 'lucide-react';
-import { api } from './api';
-import { Dashboard, Bookings, Approvals, Resources, UsersPage, Departments, Maintenance, Analytics, Settings, ANALYTICS_ROLES } from './pages';
+import { useEffect } from 'react';
+import { RouterProvider, useRouter } from './context/RouterContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { LoginPage } from './pages/auth/LoginPage';
+import { StudentDashboard } from './pages/student/StudentDashboard';
+import { FacultyDashboard } from './pages/faculty/FacultyDashboard';
+import { CoordinatorDashboard } from './pages/coordinator/CoordinatorDashboard';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { MaintenanceDashboard } from './pages/maintenance/MaintenanceDashboard';
+import { ManagementDashboard } from './pages/management/ManagementDashboard';
+import { showToast } from './services/api';
 
-const NAV = [
-  ['Dashboard', LayoutDashboard, Dashboard], ['Bookings', CalendarCheck, Bookings], ['Resources', Boxes, Resources],
-  ['Users', Users, UsersPage, ANALYTICS_ROLES], ['Departments', Building2, Departments],
-  ['Approvals', ClipboardCheck, Approvals, ANALYTICS_ROLES], ['Maintenance', Wrench, Maintenance, ['ADMIN', 'COORDINATOR', 'MAINTENANCE', 'MANAGEMENT']],
-  ['Analytics', BarChart3, Analytics, ANALYTICS_ROLES], ['Settings', Cog, Settings],
-];
+function AppContent() {
+  const { currentPath, navigate } = useRouter();
+  const { currentUser, loading } = useAuth();
+
+  // Root redirect logic
+  useEffect(() => {
+    if (loading) return;
+
+    if (currentPath === '/' || currentPath === '') {
+      if (currentUser?.role) {
+        navigate(`/${currentUser.role.toLowerCase()}/dashboard`, { replace: true });
+      } else {
+        navigate('/login/student', { replace: true });
+      }
+    }
+  }, [currentPath, currentUser, loading, navigate]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'var(--bg-canvas)',
+        color: 'var(--text-primary)',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <div style={{
+          width: '44px',
+          height: '44px',
+          border: '3px solid var(--border-subtle)',
+          borderTopColor: 'var(--brand-primary)',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite'
+        }} />
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+          Smart Campus
+        </h2>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          Loading institutional environment…
+        </p>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Auth Routes
+  if (currentPath.startsWith('/login')) {
+    const roleMatch = currentPath.split('/')[2]?.toUpperCase();
+    return <LoginPage initialRole={roleMatch || 'STUDENT'} />;
+  }
+
+  // Protected Dashboard Routes
+  if (currentPath.includes('/dashboard')) {
+    if (!currentUser) {
+      const targetRole = currentPath.split('/')[1]?.toLowerCase() || 'student';
+      navigate(`/login/${targetRole}`, { replace: true });
+      return null;
+    }
+
+    const requestedRole = currentPath.split('/')[1]?.toUpperCase();
+    const userRole = currentUser.role?.toUpperCase();
+
+    // Role Guard: prevent unauthorized dashboard viewing
+    if (requestedRole && requestedRole !== userRole) {
+      showToast(`Privilege Notice: Redirecting from ${requestedRole} to your authorized ${userRole} portal.`, 'err');
+      navigate(`/${userRole.toLowerCase()}/dashboard`, { replace: true });
+      return null;
+    }
+
+    // Render verified role dashboard
+    switch (userRole) {
+      case 'STUDENT':
+        return <StudentDashboard />;
+      case 'FACULTY':
+        return <FacultyDashboard />;
+      case 'COORDINATOR':
+        return <CoordinatorDashboard />;
+      case 'ADMIN':
+        return <AdminDashboard />;
+      case 'MAINTENANCE':
+        return <MaintenanceDashboard />;
+      case 'MANAGEMENT':
+        return <ManagementDashboard />;
+      default:
+        return <StudentDashboard />;
+    }
+  }
+
+  // Fallback: render login
+  return <LoginPage initialRole="STUDENT" />;
+}
 
 export default function App() {
-  const [users, setUsers] = useState([]); const [uid, setUid] = useState(localStorage.getItem('uid') || '');
-  const [me, setMe] = useState(); const [page, setPage] = useState('Dashboard'); const [col, setCol] = useState(false); const [open, setOpen] = useState(false);
-  const [q, setQ] = useState(''); const [bq, setBq] = useState(''); const [toast, setToast] = useState();
-
-  useEffect(() => { api('/login-users').then((u) => { setUsers(u); if (!uid) { const a = u.find((x) => x.role === 'ADMIN') || u[0]; localStorage.setItem('uid', a.user_id); setUid(String(a.user_id)); } }).catch((e) => setToast({ m: 'Cannot reach API: ' + e.message, t: 'err' })); }, []);
-  useEffect(() => { if (uid) api('/me').then(setMe).catch(() => { localStorage.removeItem('uid'); setUid(''); }); }, [uid]);
-  useEffect(() => { const h = (e) => { setToast(e.detail); setTimeout(() => setToast(), 3500); }; window.addEventListener('toast', h); return () => window.removeEventListener('toast', h); }, []);
-
-  const allowed = NAV.filter((n) => !n[3] || (me && n[3].includes(me.role)));
-  const cur = allowed.find((n) => n[0] === page) || allowed[0]; const Cur = cur?.[2];
-  const go = (name) => { setPage(name); setOpen(false); };
-  const switchUser = (v) => { localStorage.setItem('uid', v); setUid(v); setPage('Dashboard'); };
-
-  return <div className="app">
-    <aside className={'side' + (col ? ' col' : '') + (open ? ' open' : '')}>
-      <div className="brand"><Building2 /><span>Smart Campus</span></div>
-      {allowed.map(([name, Icon]) => <button key={name} className={'nav' + (cur?.[0] === name ? ' on' : '')} onClick={() => go(name)}><Icon size={18} /><span className="lbl">{name}</span></button>)}
-    </aside>
-    <div className="main">
-      <header className="top">
-        <button className="ico" onClick={() => (window.innerWidth < 800 ? setOpen(!open) : setCol(!col))}><Menu size={20} /></button>
-        <form className="search" onSubmit={(e) => { e.preventDefault(); setBq(q); go('Bookings'); }}><Search size={16} /><input placeholder="Search bookings…" value={q} onChange={(e) => setQ(e.target.value)} /></form>
-        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-          <select value={uid} onChange={(e) => switchUser(e.target.value)}>{users.map((u) => <option key={u.user_id} value={u.user_id}>{u.full_name} — {u.role}</option>)}</select>
-          <div className="role">Demo user switcher</div></div>
-      </header>
-      <main className="content">{me && Cur ? <Cur key={uid + cur[0] + (cur[0] === 'Bookings' ? bq : '')} me={me} initialQ={bq} /> : <div className="state">Loading…</div>}</main>
-    </div>
-    {toast && <div className={'toast' + (toast.t === 'err' ? ' err' : '')}>{toast.m}</div>}
-  </div>;
+  return (
+    <ThemeProvider>
+      <RouterProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </RouterProvider>
+    </ThemeProvider>
+  );
 }

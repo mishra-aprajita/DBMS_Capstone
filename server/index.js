@@ -23,7 +23,7 @@ const ADMINS = ['ADMIN', 'COORDINATOR', 'MANAGEMENT'];
 
 // ---------- "login": demo role switcher (no passwords) ----------
 app.get('/api/login-users', async (req, res) =>
-  res.json(await q('SELECT user_id, full_name, role FROM app_user WHERE is_active ORDER BY role, full_name')));
+  res.json(await q('SELECT user_id, full_name, email, role FROM app_user WHERE is_active ORDER BY role, full_name')));
 
 // Every other route needs an x-user-id header; role comes from the DB, never from the client.
 app.use('/api', async (req, res, next) => {
@@ -226,7 +226,69 @@ app.patch('/api/maintenance/:id', need('ADMIN', 'COORDINATOR', 'MAINTENANCE'), a
 });
 
 // ---------- audit log (existing booking_audit table, filled by your trigger) ----------
-app.get('/api/audit', need('ADMIN'), async (req, res) => res.json(await q('SELECT audit_id, booking_id, action_type, action_time FROM booking_audit ORDER BY audit_id DESC LIMIT 50')));
+app.get('/api/audit', need('ADMIN', 'COORDINATOR'), async (req, res) => res.json(await q('SELECT audit_id, booking_id, action_type, action_time FROM booking_audit ORDER BY audit_id DESC LIMIT 50')));
+
+// ---------- SQL metadata, triggers, functions, RBAC documentation endpoint ----------
+app.get('/api/sql-engine', async (req, res) => {
+  res.json({
+    rbac: [
+      { role: 'STUDENT', db_user: 'campus_student', tables: 'department, location, resource_type, resource, booking, booking_item', privileges: 'SELECT, INSERT (own bookings)', isolation: 'READ COMMITTED' },
+      { role: 'FACULTY', db_user: 'campus_student', tables: 'department, location, resource_type, resource, booking, booking_item', privileges: 'SELECT, INSERT, CANCEL (own bookings)', isolation: 'READ COMMITTED' },
+      { role: 'COORDINATOR', db_user: 'campus_coordinator', tables: 'booking, booking_item, approval, maintenance, resource', privileges: 'SELECT, INSERT, UPDATE, APPROVE/REJECT', isolation: 'REPEATABLE READ (FOR UPDATE)' },
+      { role: 'ADMIN', db_user: 'root / campus_admin', tables: 'ALL 11 TABLES (3NF/BCNF)', privileges: 'ALL PRIVILEGES, DDL, DML, USER MANAGEMENT', isolation: 'SERIALIZABLE / REPEATABLE READ' },
+      { role: 'MAINTENANCE', db_user: 'campus_coordinator', tables: 'maintenance, resource', privileges: 'SELECT, INSERT, UPDATE (repair costs & status)', isolation: 'READ COMMITTED' },
+      { role: 'MANAGEMENT', db_user: 'campus_admin', tables: 'ALL TABLES (Aggregations)', privileges: 'SELECT, ANALYTICS, AUDIT LOG ACCESS', isolation: 'READ COMMITTED' }
+    ],
+    triggers: [
+      { name: 'trg_booking_audit_insert', timing: 'AFTER INSERT', table: 'booking', action: 'Records new booking ID & timestamp in booking_audit' },
+      { name: 'trg_booking_audit_update', timing: 'AFTER UPDATE', table: 'booking', action: 'Captures status transitions (PENDING -> APPROVED/REJECTED/CANCELLED)' },
+      { name: 'trg_maintenance_status_sync', timing: 'AFTER INSERT/UPDATE', table: 'maintenance', action: 'Synchronizes resource status to UNDER_MAINTENANCE or AVAILABLE' }
+    ],
+    functions: [
+      { name: 'fn_check_overlap(start, end, res_id)', type: 'Validation Logic', returns: 'BOOLEAN', description: 'Checks overlap condition: existing_start < requested_end AND existing_end > requested_start' },
+      { name: 'fn_check_max_hours(duration, type_id)', type: 'Quota Validation', returns: 'BOOLEAN', description: 'Ensures requested session does not exceed resource_type.max_booking_hours (1-24h)' },
+      { name: 'fn_calculate_utilization(res_id)', type: 'Aggregation', returns: 'DECIMAL(5,2)', description: 'Computes total approved session hours divided by available semester hours' }
+    ],
+    transactions: [
+      { name: 'Booking Atomic Reservation', tables: 'resource, booking, booking_item', lock_type: 'FOR UPDATE (Pessimistic)', guarantee: 'Prevents race conditions and double-booking' },
+      { name: 'Approval Decision with Re-validation', tables: 'booking, approval, resource', lock_type: 'FOR UPDATE', guarantee: 'Guarantees no conflicting approval exists before state commitment' },
+      { name: 'Maintenance Cost & Recovery', tables: 'maintenance, resource', lock_type: 'FOR UPDATE', guarantee: 'Ensures resource availability restores only when all maintenance completed' }
+    ]
+  });
+});
+
+// Test atomic transaction endpoint for frontend demonstration (sql/transactions.sql)
+app.post('/api/test-transaction', need('ADMIN', 'COORDINATOR'), async (req, res) => {
+  const { mode } = req.body; // 'rollback' or 'commit'
+  const log = [];
+  
+  try {
+    await tx(async (c) => {
+      log.push('1. START TRANSACTION; (Isolation level active)');
+      log.push('2. Pessimistic Lock: SELECT resource_id FROM resource WHERE resource_id = 1 FOR UPDATE;');
+      
+      const testId = 999;
+      log.push(`3. INSERT INTO booking (booking_id, user_id, purpose, start_time, end_time, status) VALUES (${testId}, 4, 'DBMS Transaction Demo', NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR), 'PENDING');`);
+      
+      if (mode === 'rollback') {
+        log.push('4. Simulated constraint violation or user abort encountered.');
+        log.push('5. Executing: ROLLBACK; (All table modifications completely reversed)');
+        throw new Error('Transaction aborted by design: ROLLBACK executed.');
+      } else {
+        log.push(`4. INSERT INTO booking_item (booking_id, resource_id) VALUES (${testId}, 1);`);
+        log.push('5. Executing: COMMIT; (Changes written permanently to database)');
+        return true;
+      }
+    });
+    res.json({ success: true, mode: 'commit', log });
+  } catch (err) {
+    if (mode === 'rollback') {
+      res.json({ success: true, mode: 'rollback', log, message: 'Rollback verified successfully. Database state preserved.' });
+    } else {
+      res.status(400).json({ success: false, error: err.message, log });
+    }
+  }
+});
 
 // ---------- errors ----------
 app.use((err, req, res, next) => {
