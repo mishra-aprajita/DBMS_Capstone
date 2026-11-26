@@ -37,8 +37,8 @@ export function MaintenanceDashboard() {
         api('/maintenance').catch(() => []),
         api('/resources').catch(() => [])
       ]);
-      setMaintenance(maintList || []);
-      setResources(resList || []);
+      setMaintenance(Array.isArray(maintList) ? maintList : []);
+      setResources(Array.isArray(resList) ? resList : []);
     } catch (err) {
       showToast('Error syncing maintenance records: ' + err.message, 'err');
     } finally {
@@ -52,11 +52,12 @@ export function MaintenanceDashboard() {
 
   // Compute maintenance statistics
   const stats = useMemo(() => {
-    const total = maintenance.length;
-    const inProgress = maintenance.filter((m) => m.status === 'IN_PROGRESS').length;
-    const scheduled = maintenance.filter((m) => m.status === 'SCHEDULED').length;
-    const completed = maintenance.filter((m) => m.status === 'COMPLETED').length;
-    const totalExpenditure = maintenance
+    const safeMaint = Array.isArray(maintenance) ? maintenance : [];
+    const total = safeMaint.length;
+    const inProgress = safeMaint.filter((m) => m.status === 'IN_PROGRESS').length;
+    const scheduled = safeMaint.filter((m) => m.status === 'SCHEDULED').length;
+    const completed = safeMaint.filter((m) => m.status === 'COMPLETED').length;
+    const totalExpenditure = safeMaint
       .filter((m) => m.cost != null)
       .reduce((sum, m) => sum + Number(m.cost || 0), 0);
 

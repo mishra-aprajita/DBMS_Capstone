@@ -74,7 +74,7 @@ export function ManagementDashboard() {
     loadData();
   }, [dateFilter]);
 
-  const norm = (arr = []) => (arr || []).map((d) => ({ ...d, value: Number(d.value) || 0 }));
+  const norm = (arr = []) => (Array.isArray(arr) ? arr : []).map((d) => ({ ...d, value: Number(d.value) || 0 }));
 
   return (
     <DashboardLayout

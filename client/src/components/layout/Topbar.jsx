@@ -124,7 +124,7 @@ export function Topbar({
             onChange={handleRoleSwitch}
             title="Switch institutional role persona"
           >
-            {allUsers.map((u) => (
+            {(Array.isArray(allUsers) ? allUsers : []).map((u) => (
               <option key={u.user_id} value={u.user_id}>
                 {u.full_name} ({u.role})
               </option>
