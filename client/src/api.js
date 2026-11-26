@@ -1,5 +1,11 @@
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+
 export const api = async (path, opts = {}) => {
-  const r = await fetch('/api' + path, {
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  const endpoint = cleanPath.startsWith('/api') ? cleanPath : '/api' + cleanPath;
+  const targetUrl = API_BASE ? `${API_BASE}${endpoint}` : endpoint;
+
+  const r = await fetch(targetUrl, {
     ...opts, body: opts.body && JSON.stringify(opts.body),
     headers: { 'Content-Type': 'application/json', 'x-user-id': localStorage.getItem('uid') || '' },
   });
