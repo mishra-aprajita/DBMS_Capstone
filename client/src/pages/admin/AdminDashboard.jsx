@@ -65,14 +65,14 @@ export function AdminDashboard() {
         api('/lookups').catch(() => ({ types: [], locations: [], coordinators: [] }))
       ]);
 
-      setDashboardStats(dash);
-      setUsers(uList || []);
-      setDepartments(deptList || []);
-      setResources(resList || []);
-      setBookings(bookList || []);
-      setMaintenance(maintList || []);
-      setAuditLogs(auditList || []);
-      setLookups(lkList);
+      setDashboardStats(dash || {});
+      setUsers(Array.isArray(uList) ? uList : []);
+      setDepartments(Array.isArray(deptList) ? deptList : []);
+      setResources(Array.isArray(resList) ? resList : []);
+      setBookings(Array.isArray(bookList) ? bookList : []);
+      setMaintenance(Array.isArray(maintList) ? maintList : []);
+      setAuditLogs(Array.isArray(auditList) ? auditList : []);
+      setLookups(lkList || { types: [], locations: [], coordinators: [] });
     } catch (err) {
       showToast('Error syncing administrative dataset: ' + err.message, 'err');
     } finally {
@@ -208,7 +208,7 @@ export function AdminDashboard() {
                 <h3><Building2 size={18} /> Academic Departments</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {departments.map((dept) => (
+                {(Array.isArray(departments) ? departments : []).map((dept) => (
                   <div 
                     key={dept.dept_id}
                     style={{

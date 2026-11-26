@@ -2,20 +2,21 @@ import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 export function DataTable({ 
-  columns, 
+  columns = [], 
   data = [], 
   pageSize = 8, 
   emptyMessage = "No academic records found.",
   isLoading = false 
 }) {
   const [currentPage, setCurrentPage] = useState(0);
+  const safeData = Array.isArray(data) ? data : [];
 
-  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(safeData.length / pageSize));
   
   const paginatedData = useMemo(() => {
     const start = currentPage * pageSize;
-    return data.slice(start, start + pageSize);
-  }, [data, currentPage, pageSize]);
+    return safeData.slice(start, start + pageSize);
+  }, [safeData, currentPage, pageSize]);
 
   const handlePrev = () => setCurrentPage((p) => Math.max(0, p - 1));
   const handleNext = () => setCurrentPage((p) => Math.min(totalPages - 1, p + 1));
@@ -30,7 +31,7 @@ export function DataTable({
     );
   }
 
-  if (!data || data.length === 0) {
+  if (safeData.length === 0) {
     return (
       <div className="academic-table-wrapper" style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
         <p style={{ fontStyle: 'italic', marginBottom: '8px' }}>{emptyMessage}</p>
@@ -63,7 +64,7 @@ export function DataTable({
         </tbody>
       </table>
 
-      {data.length > pageSize && (
+      {safeData.length > pageSize && (
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -75,7 +76,7 @@ export function DataTable({
           color: 'var(--text-muted)'
         }}>
           <div>
-            Showing <strong className="num-tabular" style={{ color: 'var(--text-primary)' }}>{currentPage * pageSize + 1}</strong> to <strong className="num-tabular" style={{ color: 'var(--text-primary)' }}>{Math.min((currentPage + 1) * pageSize, data.length)}</strong> of <strong className="num-tabular" style={{ color: 'var(--text-primary)' }}>{data.length}</strong> entries
+            Showing <strong className="num-tabular" style={{ color: 'var(--text-primary)' }}>{currentPage * pageSize + 1}</strong> to <strong className="num-tabular" style={{ color: 'var(--text-primary)' }}>{Math.min((currentPage + 1) * pageSize, safeData.length)}</strong> of <strong className="num-tabular" style={{ color: 'var(--text-primary)' }}>{safeData.length}</strong> entries
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

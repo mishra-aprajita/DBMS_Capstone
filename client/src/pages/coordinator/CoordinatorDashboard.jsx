@@ -44,9 +44,9 @@ export function CoordinatorDashboard() {
         api('/resources').catch(() => []),
         api('/maintenance').catch(() => [])
       ]);
-      setApprovals(apprData || []);
-      setResources(resData || []);
-      setMaintenance(maintData || []);
+      setApprovals(Array.isArray(apprData) ? apprData : []);
+      setResources(Array.isArray(resData) ? resData : []);
+      setMaintenance(Array.isArray(maintData) ? maintData : []);
     } catch (err) {
       showToast('Error syncing coordinator queue: ' + err.message, 'err');
     } finally {
@@ -60,11 +60,11 @@ export function CoordinatorDashboard() {
 
   // Statistics
   const pendingApprovalsCount = useMemo(() => {
-    return approvals.filter((a) => a.status === 'PENDING').length;
+    return (Array.isArray(approvals) ? approvals : []).filter((a) => a.status === 'PENDING').length;
   }, [approvals]);
 
   const activeMaintenanceCount = useMemo(() => {
-    return maintenance.filter((m) => m.status === 'IN_PROGRESS' || m.status === 'SCHEDULED').length;
+    return (Array.isArray(maintenance) ? maintenance : []).filter((m) => m.status === 'IN_PROGRESS' || m.status === 'SCHEDULED').length;
   }, [maintenance]);
 
   // Approval decision handler
@@ -207,7 +207,7 @@ export function CoordinatorDashboard() {
             />
             <StatCard 
               title="Approved Sessions" 
-              value={approvals.filter(a => a.status === 'APPROVED').length} 
+              value={(Array.isArray(approvals) ? approvals : []).filter(a => a.status === 'APPROVED').length} 
               subtext="Scheduled this month"
               icon={CheckCircle2} 
               color="var(--success-text)"
@@ -226,7 +226,7 @@ export function CoordinatorDashboard() {
             </div>
             <DataTable 
               columns={approvalColumns} 
-              data={approvals.filter(a => a.status === 'PENDING')}
+              data={(Array.isArray(approvals) ? approvals : []).filter(a => a.status === 'PENDING')}
               pageSize={5}
               emptyMessage="No pending reservation requests awaiting coordinator review."
             />

@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
       try {
         const { users, isLive } = await authService.getLoginUsers();
         if (!mounted) return;
-        setAllUsers(users || []);
+        setAllUsers(Array.isArray(users) ? users : []);
         setIsLiveApi(isLive);
 
         const activeUser = await authService.getCurrentUser();

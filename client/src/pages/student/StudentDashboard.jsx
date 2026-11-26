@@ -46,7 +46,7 @@ export function StudentDashboard() {
         api('/bookings').catch(() => []),
         api('/lookups').catch(() => ({ resources: [], types: [], locations: [], departments: [] }))
       ]);
-      setBookings(bookingsData || []);
+      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
       setLookups(lookupsData);
     } catch (err) {
       showToast('Error syncing student data: ' + err.message, 'err');
@@ -61,10 +61,11 @@ export function StudentDashboard() {
 
   // Compute student stats
   const stats = useMemo(() => {
-    const total = bookings.length;
-    const pending = bookings.filter((b) => b.status === 'PENDING').length;
-    const approved = bookings.filter((b) => b.status === 'APPROVED').length;
-    const completed = bookings.filter((b) => b.status === 'COMPLETED').length;
+    const safeBookings = Array.isArray(bookings) ? bookings : [];
+    const total = safeBookings.length;
+    const pending = safeBookings.filter((b) => b.status === 'PENDING').length;
+    const approved = safeBookings.filter((b) => b.status === 'APPROVED').length;
+    const completed = safeBookings.filter((b) => b.status === 'COMPLETED').length;
     return { total, pending, approved, completed };
   }, [bookings]);
 
