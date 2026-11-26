@@ -1,10 +1,52 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import { pool } from './db.js';
+import { pool, isMysqlLive } from './db.js';
 
 const app = express();
-app.use(cors(), express.json());
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.includes('localhost')
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id']
+}));
+app.use(express.json());
+
+// ---------- Public Infrastructure & Health Checks ----------
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    system: 'Smart Campus Resource Governance API',
+    database: isMysqlLive ? 'mysql_live' : 'in_memory_relational',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    system: 'Smart Campus Resource Governance API',
+    database: isMysqlLive ? 'mysql_live' : 'in_memory_relational',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ---------- helpers ----------
 const q = async (sql, p = []) => (await pool.query(sql, p))[0]; // values are escaped by mysql2 (no string concatenation)
@@ -290,7 +332,11 @@ app.post('/api/test-transaction', need('ADMIN', 'COORDINATOR'), async (req, res)
   }
 });
 
-// ---------- errors ----------
+// ---------- 404 & errors ----------
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: `API endpoint ${req.method} ${req.path} not found` });
+});
+
 app.use((err, req, res, next) => {
   if (err.status) return res.status(err.status).json({ error: err.message });
   if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'That record already exists' });
@@ -298,4 +344,11 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: 'Server error: ' + (err.sqlMessage || err.message) });
 });
-app.listen(process.env.PORT || 4000, () => console.log('API running on http://localhost:' + (process.env.PORT || 4000)));
+
+// Guard local listener for serverless runtime compatibility (e.g. Vercel)
+if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
+  const port = process.env.PORT || 4000;
+  app.listen(port, () => console.log('API running on http://localhost:' + port));
+}
+
+export default app;

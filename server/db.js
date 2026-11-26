@@ -10,9 +10,12 @@ const realPool = mysql.createPool({
   database: process.env.DB_NAME || 'smart_campus',
   dateStrings: true,
   connectionLimit: 10,
+  ssl: process.env.DB_SSL === 'true' || (process.env.NODE_ENV === 'production' && process.env.DB_HOST && process.env.DB_HOST !== 'localhost')
+    ? { rejectUnauthorized: false }
+    : undefined
 });
 
-let isMysqlLive = false;
+export let isMysqlLive = false;
 
 // Check connection and ensure audit table exists if MySQL is running
 async function checkMysqlConnection() {
@@ -403,6 +406,35 @@ function executeSqlInMemory(sql, params = []) {
     return inMemoryDB.booking_audit.slice(-50).reverse();
   }
 
+  // 13. Resource UPDATE
+  if (cleanSql.includes('UPDATE resource SET status=?')) {
+    const [status, rid] = params;
+    const r = inMemoryDB.resource.find(x => x.resource_id === +rid);
+    if (r) {
+      r.status = status;
+      return { affectedRows: 1 };
+    }
+    return { affectedRows: 0 };
+  }
+
+  // 14. Resource INSERT
+  if (cleanSql.includes('INSERT INTO resource')) {
+    const [code, name, type_id, loc_id, coord_id, cap, pdate] = params;
+    const newId = inMemoryDB.resource.length ? Math.max(...inMemoryDB.resource.map(r => r.resource_id)) + 1 : 1;
+    inMemoryDB.resource.push({
+      resource_id: newId,
+      resource_code: code,
+      resource_name: name,
+      type_id: Number(type_id),
+      location_id: Number(loc_id),
+      coordinator_id: Number(coord_id),
+      capacity: Number(cap),
+      status: 'AVAILABLE',
+      purchase_date: pdate
+    });
+    return { insertId: newId, affectedRows: 1 };
+  }
+
   return [];
 }
 
@@ -481,6 +513,16 @@ export const pool = {
 
         // Maintenance overlap checks
         if (clean.includes("status IN ('SCHEDULED','IN_PROGRESS') AND start_time<?")) {
+          return [[]];
+        }
+
+        // Approval overlap re-check
+        if (clean.includes("b2.status='APPROVED' AND b2.start_time<? AND b2.end_time>?")) {
+          return [[]];
+        }
+
+        // Lock check: SELECT resource_id FROM resource WHERE resource_id IN (SELECT resource_id FROM booking_item WHERE booking_id=?)
+        if (clean.includes('SELECT resource_id FROM resource WHERE resource_id IN')) {
           return [[]];
         }
 
@@ -625,7 +667,8 @@ export const pool = {
           return [{ affectedRows: 1 }];
         }
 
-        return executeSqlInMemory(sql, params);
+        const res = executeSqlInMemory(sql, params);
+        return [res, []];
       }
     };
   }

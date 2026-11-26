@@ -1,4 +1,6 @@
-// API communication layer
+// API communication layer with configurable Vercel backend URL
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
+
 export const api = async (path, opts = {}) => {
   const token = localStorage.getItem('uid') || '';
   const headers = {
@@ -7,7 +9,11 @@ export const api = async (path, opts = {}) => {
     ...(opts.headers || {})
   };
 
-  const response = await fetch('/api' + path, {
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  const endpoint = cleanPath.startsWith('/api') ? cleanPath : '/api' + cleanPath;
+  const targetUrl = API_BASE ? `${API_BASE}${endpoint}` : endpoint;
+
+  const response = await fetch(targetUrl, {
     ...opts,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
     headers,
