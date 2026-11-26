@@ -104,7 +104,10 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      maxHeight: '100vh',
+      overflowY: 'auto',
+      overflowX: 'hidden',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -114,105 +117,108 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
         ? 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.18), transparent 70%), radial-gradient(ellipse 60% 40% at 50% 120%, rgba(99, 102, 241, 0.12), transparent 70%)'
         : 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.10), transparent 70%), radial-gradient(ellipse 60% 40% at 50% 120%, rgba(59, 130, 246, 0.06), transparent 70%)',
       fontFamily: 'var(--font-sans)',
-      padding: '32px 20px',
+      padding: '16px 20px',
+      boxSizing: 'border-box',
       position: 'relative',
       transition: 'background-color 0.25s ease'
     }}>
       {/* Top Floating Theme Switcher */}
       <div style={{
         position: 'absolute',
-        top: '24px',
-        right: '28px',
+        top: '16px',
+        right: '20px',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px'
+        gap: '8px',
+        zIndex: 10
       }}>
         <button
           onClick={toggleTheme}
           className="btn-academic btn-secondary btn-sm"
           style={{
             borderRadius: 'var(--r-full)',
-            padding: '6px 14px',
-            gap: '8px',
-            fontSize: '0.78rem',
+            padding: '5px 12px',
+            gap: '6px',
+            fontSize: '0.74rem',
             boxShadow: 'var(--shadow-xs)'
           }}
           title={isDark ? "Switch to Soft Light Mode" : "Switch to Deep Dark Mode"}
         >
           {isDark ? (
             <>
-              <Sun size={15} style={{ color: '#FBBF24' }} />
-              <span>Light Mode</span>
+              <Sun size={14} style={{ color: '#FBBF24' }} />
+              <span>Light</span>
             </>
           ) : (
             <>
-              <Moon size={15} style={{ color: 'var(--brand-primary)' }} />
-              <span>Dark Mode</span>
+              <Moon size={14} style={{ color: 'var(--brand-primary)' }} />
+              <span>Dark</span>
             </>
           )}
         </button>
       </div>
 
-      {/* Brand Distinctive Emblem Header */}
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+      {/* Brand Distinctive Emblem Header - Compact Fitted */}
+      <div style={{ textAlign: 'center', marginBottom: '14px' }}>
         <div style={{
-          width: '54px',
-          height: '54px',
-          borderRadius: '16px',
+          width: '40px',
+          height: '40px',
+          borderRadius: '12px',
           background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--indigo-primary) 100%)',
           color: '#FFFFFF',
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: '16px',
-          boxShadow: '0 8px 24px -4px var(--brand-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+          marginBottom: '8px',
+          boxShadow: '0 6px 18px -3px var(--brand-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
           border: '1px solid rgba(255, 255, 255, 0.15)'
         }}>
-          <Building2 size={26} strokeWidth={2.2} />
+          <Building2 size={20} strokeWidth={2.2} />
         </div>
 
         <h1 style={{
-          fontSize: '1.75rem',
+          fontSize: '1.38rem',
           fontWeight: 800,
           color: 'var(--text-primary)',
-          letterSpacing: '-0.03em',
-          margin: 0
+          letterSpacing: '-0.025em',
+          margin: 0,
+          lineHeight: 1.2
         }}>
           Smart Campus
         </h1>
 
         <p style={{
-          fontSize: '0.82rem',
+          fontSize: '0.75rem',
           color: 'var(--text-muted)',
-          marginTop: '6px',
+          marginTop: '3px',
           fontWeight: 500
         }}>
           Academic Resource & Laboratory Governance
         </p>
       </div>
 
-      {/* Comforting Aesthetic Login Card */}
+      {/* Comforting Aesthetic Login Card - Fitted Compact */}
       <div style={{
         width: '100%',
-        maxWidth: '440px',
+        maxWidth: '410px',
         backgroundColor: 'var(--card-bg)',
         border: '1px solid var(--card-border)',
-        borderRadius: 'var(--r-xl)',
+        borderRadius: 'var(--r-lg)',
         boxShadow: 'var(--shadow-lg)',
-        padding: '36px 36px 30px',
+        padding: '20px 24px 18px',
         position: 'relative',
         transition: 'var(--transition-smooth)'
       }}>
         {/* Soft Role Selector Grid with Distinctive Badges */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '14px' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '10px'
+            marginBottom: '8px'
           }}>
             <span style={{
-              fontSize: '0.74rem',
+              fontSize: '0.68rem',
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
@@ -222,9 +228,9 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
             </span>
 
             <span style={{
-              fontSize: '0.72rem',
+              fontSize: '0.70rem',
               color: 'var(--brand-primary)',
-              fontWeight: 600
+              fontWeight: 700
             }}>
               {selectedRole}
             </span>
@@ -233,7 +239,7 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '8px'
+            gap: '6px'
           }}>
             {PORTAL_ROLES.map(({ key, label, icon: Icon, badgeClass }) => {
               const isSelected = selectedRole === key;
@@ -246,8 +252,8 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '6px',
-                    padding: '10px 6px',
+                    gap: '4px',
+                    padding: '7px 4px',
                     borderRadius: 'var(--r-md)',
                     border: isSelected 
                       ? '1px solid var(--brand-primary)' 
@@ -259,14 +265,15 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
                     transition: 'var(--transition-smooth)'
                   }}
                 >
-                  <div className={`icon-badge ${badgeClass}`} style={{ width: '28px', height: '28px' }}>
-                    <Icon size={15} strokeWidth={2.2} />
+                  <div className={`icon-badge ${badgeClass}`} style={{ width: '24px', height: '24px', borderRadius: '6px' }}>
+                    <Icon size={13} strokeWidth={2.2} />
                   </div>
                   <span style={{
-                    fontSize: '0.72rem',
+                    fontSize: '0.68rem',
                     fontWeight: isSelected ? 700 : 500,
                     color: isSelected ? 'var(--brand-primary)' : 'var(--text-body)',
-                    fontFamily: 'var(--font-sans)'
+                    fontFamily: 'var(--font-sans)',
+                    lineHeight: 1.1
                   }}>
                     {label}
                   </span>
@@ -279,19 +286,19 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
         {/* Error Notification */}
         {errorMsg && (
           <div style={{
-            padding: '12px 14px',
+            padding: '8px 12px',
             backgroundColor: 'var(--error-bg)',
             border: '1px solid var(--error-border)',
             borderRadius: 'var(--r-md)',
             color: 'var(--error-text)',
-            fontSize: '0.78rem',
-            marginBottom: '20px',
+            fontSize: '0.74rem',
+            marginBottom: '14px',
             display: 'flex',
             alignItems: 'flex-start',
-            gap: '10px',
-            lineHeight: 1.5
+            gap: '8px',
+            lineHeight: 1.4
           }}>
-            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -299,10 +306,10 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
         {/* Pure Form */}
         <form onSubmit={handleSubmit}>
           {/* Institutional Email */}
-          <div className="form-group-academic">
-            <label className="form-label-academic">
+          <div className="form-group-academic" style={{ marginBottom: '10px' }}>
+            <label className="form-label-academic" style={{ marginBottom: '4px', fontSize: '0.74rem' }}>
               <span>Institutional Email</span>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', fontWeight: 400 }}>@campus.edu</span>
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-subtle)', fontWeight: 400 }}>@campus.edu</span>
             </label>
             <div style={{ position: 'relative' }}>
               <input 
@@ -310,15 +317,15 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
                 required
                 placeholder="name@campus.edu"
                 className="form-input-academic"
-                style={{ paddingLeft: '38px' }}
+                style={{ paddingLeft: '34px', paddingRight: '12px', paddingTop: '7px', paddingBottom: '7px', fontSize: '0.82rem' }}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
               <Mail 
-                size={16} 
+                size={14} 
                 style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '11px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: 'var(--text-subtle)',
@@ -329,8 +336,8 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
           </div>
 
           {/* Password */}
-          <div className="form-group-academic">
-            <div className="form-label-academic">
+          <div className="form-group-academic" style={{ marginBottom: '8px' }}>
+            <div className="form-label-academic" style={{ marginBottom: '4px', fontSize: '0.74rem' }}>
               <span>Password</span>
               <button 
                 type="button"
@@ -339,7 +346,7 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
                   background: 'none',
                   border: 'none',
                   color: 'var(--brand-primary)',
-                  fontSize: '0.74rem',
+                  fontSize: '0.70rem',
                   cursor: 'pointer',
                   padding: 0,
                   fontWeight: 600
@@ -354,15 +361,15 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
                 required
                 placeholder="••••••••"
                 className="form-input-academic"
-                style={{ paddingLeft: '38px', paddingRight: '38px' }}
+                style={{ paddingLeft: '34px', paddingRight: '34px', paddingTop: '7px', paddingBottom: '7px', fontSize: '0.82rem' }}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
               <Lock 
-                size={16} 
+                size={14} 
                 style={{
                   position: 'absolute',
-                  left: '12px',
+                  left: '11px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   color: 'var(--text-subtle)',
@@ -374,7 +381,7 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
                   position: 'absolute',
-                  right: '12px',
+                  right: '10px',
                   top: '50%',
                   transform: 'translateY(-50%)',
                   background: 'none',
@@ -386,7 +393,7 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
                 }}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
             </div>
           </div>
@@ -396,13 +403,13 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            margin: '18px 0 24px'
+            margin: '10px 0 14px'
           }}>
             <label style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              fontSize: '0.78rem',
+              gap: '6px',
+              fontSize: '0.74rem',
               color: 'var(--text-muted)',
               cursor: 'pointer'
             }}>
@@ -416,14 +423,14 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
             </label>
 
             <span style={{
-              fontSize: '0.72rem',
+              fontSize: '0.70rem',
               color: 'var(--brand-primary)',
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               gap: '4px'
             }}>
-              <ShieldCheck size={13} />
+              <ShieldCheck size={12} />
               <span>TLS Secured</span>
             </span>
           </div>
@@ -432,34 +439,34 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="btn-academic btn-primary btn-lg"
-            style={{ width: '100%' }}
+            className="btn-academic btn-primary"
+            style={{ width: '100%', padding: '9px 16px', fontSize: '0.84rem' }}
           >
-            <span>{isSubmitting ? 'Authenticating with Vault…' : `Sign In as ${selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()}`}</span>
-            <ArrowRight size={16} />
+            <span>{isSubmitting ? 'Authenticating…' : `Sign In as ${selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()}`}</span>
+            <ArrowRight size={14} />
           </button>
         </form>
 
         {/* Clean, Comforting Persona Quick Selector */}
         <div style={{
-          marginTop: '26px',
-          paddingTop: '18px',
+          marginTop: '12px',
+          paddingTop: '10px',
           borderTop: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          fontSize: '0.76rem',
+          fontSize: '0.72rem',
           color: 'var(--text-muted)'
         }}>
-          <span style={{ fontWeight: 500 }}>Quick Persona Autofill:</span>
+          <span style={{ fontWeight: 500 }}>Persona Autofill:</span>
           <select
             onChange={handlePersonaSelect}
             defaultValue=""
             className="form-select-academic"
             style={{
               width: 'auto',
-              padding: '5px 10px',
-              fontSize: '0.74rem',
+              padding: '4px 8px',
+              fontSize: '0.70rem',
               borderRadius: 'var(--r-md)',
               fontWeight: 600
             }}
@@ -476,11 +483,11 @@ export function LoginPage({ initialRole = 'STUDENT' }) {
 
       {/* Subtle Institutional Footnote */}
       <div style={{
-        marginTop: '28px',
+        marginTop: '14px',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        fontSize: '0.74rem',
+        gap: '6px',
+        fontSize: '0.70rem',
         color: 'var(--text-subtle)',
         fontWeight: 500
       }}>
